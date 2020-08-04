@@ -12,10 +12,10 @@
 queue_t *q_new()
 {
     queue_t *q = malloc(sizeof(queue_t));
-
     if (!q) {
         return NULL;
     }
+
     q->head = NULL;
     q->tail = NULL;
     q->size = 0;
@@ -25,8 +25,10 @@ queue_t *q_new()
 /* Free all storage used by queue */
 void q_free(queue_t *q)
 {
-    list_ele_t *cur = q->head;
-    list_ele_t *del = NULL;
+    if (!q) {
+        return;
+    }
+    list_ele_t *cur = q->head, *del = NULL;
 
     while (cur) {
         del = cur;
@@ -146,7 +148,7 @@ bool q_remove_head(queue_t *q, char *sp, size_t bufsize)
         return false;
     }
     /* copy the removed string to *sp */
-    if (bufsize > 0) {
+    if (sp && bufsize > 0) {
         strncpy(sp, q->head->value, bufsize);
         sp[bufsize - 1] = '\0';
     }
@@ -154,6 +156,11 @@ bool q_remove_head(queue_t *q, char *sp, size_t bufsize)
     /* free the space used by head node and string */
     list_ele_t *del = q->head;
     q->head = q->head->next;
+    if (!q->head) {
+        q->tail = NULL;
+    }
+
+    /* free the node and string space */
     free(del->value);
     free(del);
 
@@ -220,6 +227,7 @@ list_ele_t *merge(list_ele_t *h1, list_ele_t *h2)
         h2 = h2->next;
     }
 
+    /* merge two lists */
     while (h1 && h2) {
         if (strcmp(h1->value, h2->value) < 0) {
             tail->next = h1;
@@ -243,15 +251,14 @@ list_ele_t *merge(list_ele_t *h1, list_ele_t *h2)
         tail = tail->next;
         h2 = h2->next;
     }
-    return head;
 
+    return head;
 }
 
 /* Merge sort function called by q_sort */
 list_ele_t *mergeSort(list_ele_t *begin, list_ele_t *end)
 {
     /* check initial condition */
-
     if (begin == end) {
         return begin;
     }
@@ -287,7 +294,7 @@ void q_sort(queue_t *q)
     q->head = mergeSort(q->head, q->tail);
 
     /* reset the tail pointer */
-    list_ele_t *cur = q->head;
+    list_ele_t *cur = q->tail;
 
     while (cur->next) {
         cur = cur->next;
