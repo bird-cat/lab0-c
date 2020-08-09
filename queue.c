@@ -215,69 +215,89 @@ void q_reverse(queue_t *q)
 
 /* Merge function called by mergeSort */
 /* Merge two sorted lists */
-list_ele_t *merge(list_ele_t *h1, list_ele_t *h2)
+void merge(list_ele_t *lh,
+           list_ele_t *rh,
+           list_ele_t **head_ptr,
+           list_ele_t **tail_ptr)
 {
     list_ele_t *head, *tail;
 
-    if (strcmp(h1->value, h2->value) < 0) {
-        head = tail = h1;
-        h1 = h1->next;
+    if (strcmp(lh->value, rh->value) < 0) {
+        head = tail = lh;
+        lh = lh->next;
     } else {
-        head = tail = h2;
-        h2 = h2->next;
+        head = tail = rh;
+        rh = rh->next;
     }
 
     /* merge two lists */
-    while (h1 && h2) {
-        if (strcmp(h1->value, h2->value) < 0) {
-            tail->next = h1;
+    while (lh && rh) {
+        if (strcmp(lh->value, rh->value) < 0) {
+            tail->next = lh;
             tail = tail->next;
-            h1 = h1->next;
+            lh = lh->next;
         } else {
-            tail->next = h2;
+            tail->next = rh;
             tail = tail->next;
-            h2 = h2->next;
+            rh = rh->next;
         }
     }
 
-    while (h1) {
-        tail->next = h1;
+    while (lh) {
+        tail->next = lh;
         tail = tail->next;
-        h1 = h1->next;
+        lh = lh->next;
     }
 
-    while (h2) {
-        tail->next = h2;
+    while (rh) {
+        tail->next = rh;
         tail = tail->next;
-        h2 = h2->next;
+        rh = rh->next;
     }
 
-    return head;
+    *head_ptr = head;
+    *tail_ptr = tail;
+}
+
+/* Split function called by mergeSort */
+void split(list_ele_t *head,
+           list_ele_t **lh_ptr,
+           list_ele_t **rh_ptr,
+           list_ele_t **lt_ptr,
+           list_ele_t **rt_ptr)
+{
+    list_ele_t *slow, *fast;
+    slow = fast = head;
+
+    while (fast->next) {
+        fast = fast->next;
+        if (fast->next) {
+            fast = fast->next;
+            slow = slow->next;
+        }
+    }
+
+    *lh_ptr = head;
+    *lt_ptr = slow;
+    *rh_ptr = slow->next;
+    *rt_ptr = fast;
+    slow->next = NULL;
 }
 
 /* Merge sort function called by q_sort */
-list_ele_t *mergeSort(list_ele_t *begin, list_ele_t *end)
+void mergeSort(list_ele_t **head_ptr, list_ele_t **tail_ptr)
 {
     /* check initial condition */
-    if (begin == end) {
-        return begin;
+    if (*head_ptr == *tail_ptr) {
+        return;
     }
-
-    /* Find the middle node and split the list */
-    list_ele_t *fast = begin, *slow = begin, *prev = NULL;
-
-    while (fast) {
-        fast = fast->next;
-        if (fast) {
-            fast = fast->next;
-        }
-        prev = slow;
-        slow = slow->next;
-    }
-    prev->next = NULL;
-
+    /* split the list */
+    list_ele_t *lh, *rh, *lt, *rt;
+    split(*head_ptr, &lh, &rh, &lt, &rt);
     /* Sort the two half individually and merge them */
-    return merge(mergeSort(begin, prev), mergeSort(slow, end));
+    mergeSort(&lh, &lt);
+    mergeSort(&rh, &rt);
+    merge(lh, rh, head_ptr, tail_ptr);
 }
 
 /*
@@ -291,13 +311,5 @@ void q_sort(queue_t *q)
         return;
     }
     /* call the mergeSort function */
-    q->head = mergeSort(q->head, q->tail);
-
-    /* reset the tail pointer */
-    list_ele_t *cur = q->tail;
-
-    while (cur->next) {
-        cur = cur->next;
-    }
-    q->tail = cur;
+    mergeSort(&q->head, &q->tail);
 }
